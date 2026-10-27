@@ -498,6 +498,8 @@ paintTheme();
 
 /* ---------- api ---------- */
 let token=store.get('token'), me=null;
+const saveMe=()=>store.set('me',me?JSON.stringify(me):null);
+function cachedMe(){try{return JSON.parse(store.get('me')||'null')}catch(e){return null}}
 async function api(action,data){
   if(!window.API_URL) throw new Error('Сайт ещё не подключён к Google-таблице: впишите адрес скрипта в config.js.');
   let r;
@@ -523,7 +525,7 @@ function showForm(name,msg,kind){
 function setMsg(m,kind){const el=$('#authMsg');if(!m){el.hidden=true;return}el.textContent=m;el.className='msg '+(kind||'ok');el.hidden=false}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tab],[data-go]');if(t&&t.closest('.authcard'))showForm(t.dataset.tab||t.dataset.go)});
 $('#fLogin').addEventListener('submit',e=>{e.preventDefault();busy(e.submitter,async()=>{try{const j=await api('login',{login:$('#lLogin').value.trim(),password:$('#lPass').value});
-  token=j.token;store.set('token',token);me=j.user;$('#lPass').value='';enterApp()}catch(err){setMsg(err.message,'err');$('#resend').hidden=!/подтвердите почту/.test(err.message)}})});
+  token=j.token;store.set('token',token);me=j.user;saveMe();$('#lPass').value='';enterApp()}catch(err){setMsg(err.message,'err');$('#resend').hidden=!/подтвердите почту/.test(err.message)}})});
 $('#resend').addEventListener('click',()=>busy($('#resend'),async()=>{try{const j=await api('resendVerify',{login:$('#lLogin').value.trim()});setMsg(j.message)}catch(err){setMsg(err.message,'err')}}));
 $('#fRegister').addEventListener('submit',e=>{e.preventDefault();if($('#rPass').value!==$('#rPass2').value){setMsg('Пароли не совпадают.','err');return}
   busy(e.submitter,async()=>{try{const j=await api('register',{name:$('#rName').value,login:$('#rLogin').value.trim(),email:$('#rEmail').value.trim(),password:$('#rPass').value});$('#fRegister').reset();showForm('login',j.message)}catch(err){setMsg(err.message,'err')}})});
@@ -534,8 +536,8 @@ $('#fReset').addEventListener('submit',e=>{e.preventDefault();if($('#nPass').val
 function cleanUrl(){try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}}
 
 function showAuth(){$('#authView').hidden=false;$$('.view').forEach(v=>v.hidden=true);$('#nav').hidden=true;$('#userMenu').hidden=true;$('#sync').textContent=''}
-function logoutLocal(msg){token=null;me=null;store.set('token',null);stopPoll();showAuth();showForm('login',msg,'err')}
-$('#mLogout').addEventListener('click',async()=>{try{await api('logout')}catch(e){}token=null;me=null;store.set('token',null);stopPoll();closeMenu();showAuth();showForm('login','Вы вышли.')});
+function logoutLocal(msg){token=null;me=null;store.set('token',null);store.set('me',null);stopPoll();showAuth();showForm('login',msg,'err')}
+$('#mLogout').addEventListener('click',async()=>{try{await api('logout')}catch(e){}token=null;me=null;store.set('token',null);store.set('me',null);stopPoll();closeMenu();showAuth();showForm('login','Вы вышли.')});
 const isAdmin=()=>me&&me.role==='admin';
 function applyRole(){document.body.classList.toggle('ro',!isAdmin());$('#mAdmin').hidden=!isAdmin();$('#mBranches').hidden=!isAdmin();$('#cBranches').hidden=!isAdmin();$('#pDel').dataset.admin=isAdmin()?'1':''}
 
@@ -597,7 +599,7 @@ function stLbl(e){return isLate(e)?'Просрочено':e.status}
 
 async function loadData(quiet){
   try{if(!quiet)$('#sync').textContent='Загрузка…';const j=await api('data');
-    if(j.me&&me&&j.me.role!==me.role){me=Object.assign(me,j.me);applyRole();toast(isAdmin()?'Вам выданы права администратора':'Права администратора сняты')}
+    if(j.me&&me&&j.me.role!==me.role){me=Object.assign(me,j.me);saveMe();applyRole();toast(isAdmin()?'Вам выданы права администратора':'Права администратора сняты')}
     events=j.events;branches=j.branches||[];goals=j.goals||{};monthGoals=j.monthGoals||{};
     renderAll();const d=new Date();$('#sync').textContent='Обновлено '+pad(d.getHours())+':'+pad(d.getMinutes());
     if(view!=='calendar'||members===null)loadMembers(true);
@@ -830,7 +832,13 @@ $('#pDel').addEventListener('click',()=>armDelete($('#pDel'),()=>busy($('#pDel')
   if(p.get('verify')){showForm('login','Подтверждаю почту…');try{const j=await api('verify',{verifyToken:p.get('verify')});showForm('login',j.message)}catch(err){showForm('login',err.message,'err')}cleanUrl();return}
   if(p.get('reset')){resetToken=p.get('reset');showForm('reset');return}
   if(!window.API_URL){showForm('login','Сайт ещё не подключён к Google-таблице. Администратору: впишите адрес скрипта в config.js.','err');return}
-  if(token){try{const j=await api('me');me=j.user;enterApp();return}catch(err){}}
+  if(token){
+    const c=cachedMe();
+    if(c){me=c;enterApp();api('me').then(j=>{if(j.user.role!==me.role||j.user.name!==me.name){me=j.user;saveMe();applyRole();$('#userName').textContent=me.name||me.login;renderAll()}else{me=j.user;saveMe()}}).catch(()=>{});return}
+    showForm('login','Восстанавливаю вход…');
+    for(let i=0;i<3&&token;i++){try{const j=await api('me');me=j.user;saveMe();enterApp();return}catch(err){if(!token)return;await new Promise(r=>setTimeout(r,1500))}}
+    if(token){showForm('login','Не удалось связаться с сервером. Обновите страницу или войдите заново.','err');return}
+  }
   showForm('login');
 })();
 })();
