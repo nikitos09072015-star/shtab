@@ -257,6 +257,8 @@ dialog::backdrop{background:rgb(10 12 20 / .5)}
 .secret{font-family:var(--mono);font-size:18px;font-weight:600;padding:10px 12px;background:var(--surface-2);border-radius:8px;user-select:all}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;max-width:calc(100vw - 32px)}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+body.ro .adm-hint,body.ro #cAdd,body.ro #mAdd,body.ro [data-addon],body.ro [data-edit]{display:none!important}
+.mst-ro{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600}
 </style>
 <script src="config.js?v=3"></script>
 </head>
@@ -334,7 +336,7 @@ dialog::backdrop{background:rgb(10 12 20 / .5)}
     <div class="monthsw" data-monthsw></div>
   </div>
   <section class="kpis" id="rKpis" aria-label="Показатели месяца"></section>
-  <div class="hint" style="margin-top:-12px">Цель на месяц вписывается прямо в карточку. Факт считается по мероприятиям месяца.</div>
+  <div class="hint" style="margin-top:-12px"><span class="adm-hint">Цель на месяц вписывается прямо в карточку. </span> Факт считается по мероприятиям месяца.</div>
   <section class="card" aria-labelledby="rBrT"><h2 id="rBrT">Ветки за месяц</h2><div class="tablebox" style="border:0"><table id="rBranches"></table></div></section>
   <section class="card chart" aria-labelledby="rChT">
     <div class="row-between" style="margin-bottom:10px"><h2 id="rChT" style="margin:0">Динамика по месяцам</h2><div class="chips" id="rMetric"></div></div>
@@ -535,11 +537,12 @@ function showAuth(){$('#authView').hidden=false;$$('.view').forEach(v=>v.hidden=
 function logoutLocal(msg){token=null;me=null;store.set('token',null);stopPoll();showAuth();showForm('login',msg,'err')}
 $('#mLogout').addEventListener('click',async()=>{try{await api('logout')}catch(e){}token=null;me=null;store.set('token',null);stopPoll();closeMenu();showAuth();showForm('login','Вы вышли.')});
 const isAdmin=()=>me&&me.role==='admin';
+function applyRole(){document.body.classList.toggle('ro',!isAdmin());$('#mAdmin').hidden=!isAdmin();$('#mBranches').hidden=!isAdmin();$('#cBranches').hidden=!isAdmin();$('#pDel').dataset.admin=isAdmin()?'1':''}
 
 function enterApp(){
   $('#authView').hidden=true;$('#nav').hidden=false;$('#userMenu').hidden=false;
   $('#userName').textContent=me.name||me.login;
-  $('#mAdmin').hidden=!isAdmin();$('#mBranches').hidden=!isAdmin();$('#cBranches').hidden=!isAdmin();$('#pDel').dataset.admin=isAdmin()?'1':'';
+  applyRole();
   route();loadData();startPoll();
 }
 
@@ -594,6 +597,7 @@ function stLbl(e){return isLate(e)?'Просрочено':e.status}
 
 async function loadData(quiet){
   try{if(!quiet)$('#sync').textContent='Загрузка…';const j=await api('data');
+    if(j.me&&me&&j.me.role!==me.role){me=Object.assign(me,j.me);applyRole();toast(isAdmin()?'Вам выданы права администратора':'Права администратора сняты')}
     events=j.events;branches=j.branches||[];goals=j.goals||{};monthGoals=j.monthGoals||{};
     renderAll();const d=new Date();$('#sync').textContent='Обновлено '+pad(d.getHours())+':'+pad(d.getMinutes());
     if(view!=='calendar'||members===null)loadMembers(true);
@@ -626,7 +630,7 @@ function renderReport(){
     const cls=g&&v>=g?'done':(g&&monthOver&&v<g?'behind':'');
     return `<div class="card kpi ${cls}"><span class="lbl">${l}</span><span class="val">${fmt(v)} <small>${g?'/ '+fmt(g):extra}</small></span>
       <div class="bar"><i style="width:${p}%"></i></div>
-      <label class="tgt">Цель месяца<input data-mgoal="${k}" inputmode="numeric" value="${g||''}" placeholder="—" aria-label="Цель месяца: ${l}"></label>${g?`<span class="hint">${Math.round(v/g*100)}% выполнено</span>`:''}</div>`}).join('');
+      ${isAdmin()?`<label class="tgt">Цель месяца<input data-mgoal="${k}" inputmode="numeric" value="${g||''}" placeholder="—" aria-label="Цель месяца: ${l}"></label>`:`<span class="tgt">Цель месяца: <b>${g?fmt(g):'не задана'}</b></span>`}${g?`<span class="hint">${Math.round(v/g*100)}% выполнено</span>`:''}</div>`}).join('');
   // branches
   const rows=branches.map(b=>{const l=list.filter(e=>e.track===b.name);return {b,l}});
   const other=list.filter(e=>!branches.some(b=>b.name===e.track));if(other.length)rows.push({b:brOf(other[0].track),l:other});
@@ -646,7 +650,7 @@ function renderReport(){
   const d=Math.ceil((ELECTION-new Date())/864e5);
   $('#rCountdown').textContent=`${Math.max(0,d)} дней до единого дня голосования 19.09.2027 (дату уточнить после назначения)`;
   $('#rTotal').innerHTML=METRICS.map(([k,l])=>{const v=sum(events,k),g=Number(goals[k])||0,p=g?Math.min(100,v/g*100):0;
-    return `<div class="statrow"><span>${l}</span><div><div class="bar"><i style="width:${p}%"></i></div><span class="hint num">${fmt(v)}${g?' из '+fmt(g):''}</span></div><input data-goal="${k}" class="num" inputmode="numeric" value="${g||''}" placeholder="цель" aria-label="Цель до выборов: ${l}" style="width:100%;font-size:12px;padding:3px 5px;border:1px dashed var(--line);border-radius:6px;background:transparent"></div>`}).join('');
+    return `<div class="statrow"><span>${l}</span><div><div class="bar"><i style="width:${p}%"></i></div><span class="hint num">${fmt(v)}${g?' из '+fmt(g):''}</span></div>${isAdmin()?`<input data-goal="${k}" class="num" inputmode="numeric" value="${g||''}" placeholder="цель" aria-label="Цель до выборов: ${l}" style="width:100%;font-size:12px;padding:3px 5px;border:1px dashed var(--line);border-radius:6px;background:transparent">`:`<span class="num hint">${g?'цель '+fmt(g):''}</span>`}</div>`}).join('');
   renderReportMembers();
 }
 function itemRow(e){return `<div class="it" data-open="${esc(e.id)}"><span class="d">${dshort(e.date)}${e.time?' '+esc(e.time):''}</span><span class="t"><i class="dot" style="${cvar(e.track)}"></i>${esc(e.title)}</span><span class="pill ${stCls(e)}">${stLbl(e)}</span></div>`}
@@ -712,11 +716,11 @@ function ecard(e,open){
     <span class="ttl">${esc(e.title)}</span>
     <span class="meta"><span>${dshort(e.date)}${e.time?', '+esc(e.time):''}</span>${e.place?`<span>${esc(e.place)}</span>`:''}${e.owner?`<span>Отв.: ${esc(e.owner)}</span>`:''}</span></summary>
     <div class="body">
-      <div class="desc ${e.description?'':'empty'}">${e.description?esc(e.description):'Описание не добавлено. Нажмите «Редактировать», чтобы описать мероприятие.'}</div>
+      <div class="desc ${e.description?'':'empty'}">${e.description?esc(e.description):(isAdmin()?'Описание не добавлено. Нажмите «Редактировать», чтобы описать мероприятие.':'Описание не добавлено.')}</div>
       <div class="mgrid">${METRICS.map(([k,l])=>`<div><span>${l}</span><b>${e[k]==null?'—':fmt(e[k])}</b></div>`).join('')}</div>
       ${e.note?`<div class="hint">Комментарий: ${esc(e.note)}</div>`:''}
       <div class="acts"><button class="btn small" type="button" data-edit="${esc(e.id)}">Редактировать</button>
-        <select data-qs="${esc(e.id)}" aria-label="Статус">${STATUSES.map(s=>`<option ${s===e.status?'selected':''}>${s}</option>`).join('')}</select>
+        ${isAdmin()?`<select data-qs="${esc(e.id)}" aria-label="Статус">${STATUSES.map(s=>`<option ${s===e.status?'selected':''}>${s}</option>`).join('')}</select>`:''}
         ${e.updatedBy?`<span class="hint">Изменил ${esc(e.updatedBy)} ${esc(e.updatedAt)}</span>`:''}</div>
     </div></details>`;
 }
@@ -727,7 +731,7 @@ function renderPanel(){
 }
 function renderList(){
   const m=ym(cur),list=events.filter(e=>inMonth(e,m)&&visible(e)).sort((a,b)=>(a.date+(a.time||'99')).localeCompare(b.date+(b.time||'99')));
-  if(!list.length){$('#cListView').innerHTML='<div class="card state">В этом месяце мероприятий нет. Нажмите «+ Мероприятие».</div>';return}
+  if(!list.length){$('#cListView').innerHTML='<div class="card state">В этом месяце мероприятий нет. '+(isAdmin()?'Нажмите «+ Мероприятие».':'')+'</div>';return}
   const g=new Map();list.forEach(e=>{if(!g.has(e.date))g.set(e.date,[]);g.get(e.date).push(e)});
   $('#cListView').innerHTML=[...g].map(([d,l])=>`<section class="listday"><h3>${dlong(d)}</h3><div class="stack">${l.map(e=>ecard(e,String(e.id)===String(openEv))).join('')}</div></section>`).join('');
 }
@@ -748,7 +752,7 @@ $('#cAdd').addEventListener('click',()=>openEvent(null,selDay&&selDay.slice(0,7)
 
 /* event dialog */
 let editId=null;
-function openEvent(e,date){
+function openEvent(e,date){if(!isAdmin())return;
   editId=e?e.id:null;$('#dEventT').textContent=e?'Мероприятие':'Новое мероприятие';
   $('#eTrack').innerHTML=branches.map(b=>`<option>${esc(b.name)}</option>`).join('')+(e&&!branches.some(b=>b.name===e.track)?`<option>${esc(e.track)}</option>`:'');
   const v=(id,val)=>{$(id).value=val??''};
@@ -795,12 +799,12 @@ function renderMembers(){
   if(q)l=l.filter(x=>(x.name+' '+x.note).toLowerCase().includes(q));
   l.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
   $('#mBody').innerHTML=l.length?l.map(x=>`<tr data-mid="${esc(x.id)}">
-    <td class="name" data-medit>${esc(x.name)}</td>
-    <td><select class="mst ${upCls(x.uploaded)}" data-mf-k="uploaded" aria-label="Загружен на сайт партии">${UPL.map(s=>`<option ${s===x.uploaded?'selected':''}>${s}</option>`).join('')}</select></td>
-    <td><select class="mst ${decCls(x.decision)}" data-mf-k="decision" aria-label="Решение">${DEC.map(s=>`<option ${s===x.decision?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td class="name" ${isAdmin()?'data-medit':''}>${esc(x.name)}</td>
+    <td>${isAdmin()?`<select class="mst ${upCls(x.uploaded)}" data-mf-k="uploaded" aria-label="Загружен на сайт партии">${UPL.map(s=>`<option ${s===x.uploaded?'selected':''}>${s}</option>`).join('')}</select>`:`<span class="mst mst-ro ${upCls(x.uploaded)}">${esc(x.uploaded)}</span>`}</td>
+    <td>${isAdmin()?`<select class="mst ${decCls(x.decision)}" data-mf-k="decision" aria-label="Решение">${DEC.map(s=>`<option ${s===x.decision?'selected':''}>${s}</option>`).join('')}</select>`:`<span class="mst mst-ro ${decCls(x.decision)}">${esc(x.decision)}</span>`}</td>
     <td class="note" title="${esc(x.note)}">${esc(x.note)||''}</td></tr>`).join('')
-    :`<tr><td colspan="4" class="state">${members.length?'Никого не нашлось. Измените поиск или фильтр.':'Список пуст. Нажмите «+ Добавить», чтобы внести первого человека.'}</td></tr>`;
-  $('#mCount').textContent=`Показано ${l.length} из ${members.length}. Удалять записи может только администратор.`;
+    :`<tr><td colspan="4" class="state">${members.length?'Никого не нашлось. Измените поиск или фильтр.':(isAdmin()?'Список пуст. Нажмите «+ Добавить», чтобы внести первого человека.':'Список пуст.')}</td></tr>`;
+  $('#mCount').textContent=`Показано ${l.length} из ${members.length}.`+(isAdmin()?'':' Изменять список может только администратор.');
 }
 $('#mSearch').addEventListener('input',renderMembers);
 document.addEventListener('click',e=>{const f=e.target.closest('[data-mf]');if(f){mFilterSt=f.dataset.mf;renderMembers()}});
@@ -809,7 +813,7 @@ $('#mBody').addEventListener('change',e=>{const k=e.target.dataset.mfK;if(!k)ret
   api('saveMember',{id,fields:{[k]:x[k]}}).then(()=>{toast('Сохранено');renderReportMembers();renderMembers()}).catch(err=>{toast(err.message);loadMembers(true)})});
 $('#mBody').addEventListener('click',e=>{if(!e.target.closest('[data-medit]'))return;openMember(members.find(m=>m.id===e.target.closest('[data-mid]').dataset.mid))});
 let memberId=null;
-function openMember(x){memberId=x?x.id:null;$('#dMemberT').textContent=x?'Карточка':'Новый человек';
+function openMember(x){if(!isAdmin())return;memberId=x?x.id:null;$('#dMemberT').textContent=x?'Карточка':'Новый человек';
   $('#pUploaded').innerHTML=UPL.map(s=>`<option>${s}</option>`).join('');$('#pDecision').innerHTML=DEC.map(s=>`<option>${s}</option>`).join('');
   $('#pName').value=x?.name??'';$('#pUploaded').value=x?x.uploaded:UPL[0];$('#pDecision').value=x?x.decision:DEC[0];$('#pNote').value=x?.note??'';
   $('#pDel').hidden=!(x&&isAdmin());$('#dMember').showModal();setTimeout(()=>$('#pName').focus(),0)}
