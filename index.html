@@ -216,16 +216,16 @@ tfoot td{font-weight:600;background:var(--surface-2)}
 .mbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .search{position:relative;flex:1;min-width:220px;max-width:420px}
 .search input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
-.members{min-width:980px}
+.members{min-width:640px}
+.members td.name{width:34%}
 .members td.name{font-weight:600;cursor:pointer}
 .members td.name:hover{color:var(--accent)}
-.members .note{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.members .note{max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 select.mst{font-size:13px;font-weight:600;padding:4px 8px;border-radius:999px;border:1px solid transparent;cursor:pointer}
-.ms-0{background:var(--surface-2);color:var(--muted)}
-.ms-1{background:var(--warn-soft);color:var(--warn)}
-.ms-2{background:var(--accent-soft);color:var(--accent)}
-.ms-3{background:var(--ok-soft);color:var(--ok)}
-.ms-4{background:var(--surface-2);color:var(--off)}
+.st-no,.st-wait{background:var(--surface-2);color:var(--muted)}
+.st-up{background:var(--accent-soft);color:var(--accent)}
+.st-ok{background:var(--ok-soft);color:var(--ok)}
+.st-bad{background:var(--bad-soft);color:var(--bad)}
 .yes{color:var(--ok);font-weight:600}
 .no{color:var(--bad)}
 
@@ -346,7 +346,7 @@ dialog::backdrop{background:rgb(10 12 20 / .5)}
     <section class="card"><h2>Требуют внимания</h2><p class="sub">Дедлайн прошёл, а статус всё ещё «План»</p><div class="elist" id="rLate"></div></section>
   </div>
   <div class="grid2">
-    <section class="card"><h2>Члены партии на территории</h2><div id="rMembers"><div class="state">Загружаю…</div></div></section>
+    <section class="card"><h2>Члены партии: подача и приём</h2><div id="rMembers"><div class="state">Загружаю…</div></div></section>
     <section class="card"><h2>До выборов</h2><p class="sub" id="rCountdown"></p><div id="rTotal"></div></section>
   </div>
 </div></main>
@@ -375,9 +375,9 @@ dialog::backdrop{background:rgb(10 12 20 / .5)}
     <div><div class="eyebrow">Чертаново Южное</div><h1>Члены партии</h1></div>
     <button class="btn" type="button" id="mAdd">+ Добавить</button>
   </div>
-  <div class="msg info">Это персональные данные, включая сведения о политических взглядах. Вносите человека только с его письменного согласия на обработку и отмечайте согласие в карточке.</div>
-  <div class="mbar"><div class="search"><input id="mSearch" type="search" placeholder="Поиск: ФИО, телефон, адрес, куратор" aria-label="Поиск"></div><div class="chips" id="mFilter"></div></div>
-  <div class="tablebox"><table class="members"><thead><tr><th>ФИО</th><th>Статус</th><th>Телефон</th><th>Адрес</th><th>Вступил</th><th>Куратор</th><th>Согласие</th><th>Комментарий</th></tr></thead><tbody id="mBody"><tr><td colspan="8" class="state">Загружаю…</td></tr></tbody></table></div>
+  <p class="hint" style="margin:0">Кого мы подали на сайт партии и приняли ли их. Отметки меняются прямо в таблице.</p>
+  <div class="mbar"><div class="search"><input id="mSearch" type="search" placeholder="Поиск по ФИО или комментарию" aria-label="Поиск"></div><div class="chips" id="mFilter"></div></div>
+  <div class="tablebox"><table class="members"><thead><tr><th>ФИО</th><th>Загружен на сайт партии</th><th>Решение</th><th>Комментарий</th></tr></thead><tbody id="mBody"><tr><td colspan="4" class="state">Загружаю…</td></tr></tbody></table></div>
   <div class="hint" id="mCount"></div>
 </div></main>
 
@@ -409,14 +409,9 @@ dialog::backdrop{background:rgb(10 12 20 / .5)}
   <div class="dlg-head"><h2 id="dMemberT">Член партии</h2><button class="iconbtn" type="button" data-close aria-label="Закрыть">✕</button></div>
   <div class="form">
     <label class="field full">ФИО<input id="pName" required maxlength="200"></label>
-    <label class="field">Статус<select id="pStatus"></select></label>
-    <label class="field">Дата вступления<input id="pJoined" type="date"></label>
-    <label class="field">Телефон<input id="pPhone" type="tel" maxlength="200"></label>
-    <label class="field">Почта<input id="pEmail" type="email" maxlength="200"></label>
-    <label class="field">Адрес<input id="pAddress" maxlength="200" placeholder="Улица, дом"></label>
-    <label class="field">Куратор<input id="pCurator" maxlength="200"></label>
-    <label class="field full">Комментарий<textarea id="pNote" maxlength="2000" style="min-height:80px"></textarea></label>
-    <label class="check full"><input id="pConsent" type="checkbox"> Есть письменное согласие на обработку персональных данных</label>
+    <label class="field">Загружен на сайт партии<select id="pUploaded"></select></label>
+    <label class="field">Решение<select id="pDecision"></select></label>
+    <label class="field full">Комментарий<textarea id="pNote" maxlength="2000" style="min-height:80px" placeholder="Например: дата подачи, номер заявки"></textarea></label>
   </div>
   <div class="dlg-foot"><button class="btn danger" type="button" id="pDel" hidden>Удалить</button><div class="r"><button class="btn ghost" type="button" data-close>Отмена</button><button class="btn" type="submit">Сохранить</button></div></div>
 </form></dialog>
@@ -584,7 +579,7 @@ function showSecret(login,j){$('#secretMsg').textContent=`Пароль для «
 $('#copySecret').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#secretVal').textContent);toast('Скопировано')}catch(e){const r=document.createRange();r.selectNodeContents($('#secretVal'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Выделено — нажмите Cmd+C')}});
 
 /* ---------- data ---------- */
-let events=[],branches=[],goals={},monthGoals={},members=null,memberStatuses=['Сторонник','Кандидат в члены','Член партии','Активист','Выбыл'];
+let events=[],branches=[],goals={},monthGoals={},members=null,UPL=['Не загружен','Загружен'],DEC=['Ждёт решения','Принят','Не принят'];
 let view='report',cur=new Date(),calView='grid',selDay=null,openEv=null,hiddenBr=new Set(),rMetric='reach',poll=null,pending=false;
 cur=new Date(cur.getFullYear(),cur.getMonth(),1);
 try{const h=JSON.parse(store.get('hiddenBr')||'[]');hiddenBr=new Set(h)}catch(e){}
@@ -603,7 +598,7 @@ async function loadData(quiet){
     renderAll();const d=new Date();$('#sync').textContent='Обновлено '+pad(d.getHours())+':'+pad(d.getMinutes());
     if(view!=='calendar'||members===null)loadMembers(true);
   }catch(err){$('#sync').textContent='';if(!quiet)toast(err.message)}}
-async function loadMembers(quiet){try{const j=await api('members');members=j.members;memberStatuses=j.statuses||memberStatuses;renderMembers();renderReportMembers()}catch(err){if(!quiet)toast(err.message)}}
+async function loadMembers(quiet){try{const j=await api('members');members=j.members;UPL=j.uploadStatuses||UPL;DEC=j.decisions||DEC;renderMembers();renderReportMembers()}catch(err){if(!quiet)toast(err.message)}}
 function editing(){const a=document.activeElement;return (a&&a.matches&&a.matches('input,select,textarea')&&!a.closest('dialog'))||anyDialog()}
 function startPoll(){stopPoll();poll=setInterval(()=>{if(!document.hidden&&!editing())loadData(true)},60000)}
 function stopPoll(){if(poll)clearInterval(poll);poll=null}
@@ -674,12 +669,14 @@ function niceStep(max){const raw=max/4,p=Math.pow(10,Math.floor(Math.log10(raw))
 function fmtShort(v){return v>=10000?Math.round(v/1000)+'k':v>=1000?(v/1000).toFixed(1).replace('.0','')+'k':String(v)}
 function renderReportMembers(){
   const el=$('#rMembers');if(!el)return;if(members===null){el.innerHTML='<div class="state">Загружаю…</div>';return}
-  const m=ym(cur),active=members.filter(x=>x.status!=='Выбыл'),nw=members.filter(x=>x.joined&&x.joined.slice(0,7)===m).length,party=members.filter(x=>x.status==='Член партии'||x.status==='Активист').length;
-  const counts=memberStatuses.map(s=>[s,members.filter(x=>x.status===s).length]);const mx=Math.max(1,...counts.map(c=>c[1]));
-  el.innerHTML=`<div class="minis"><div><span>Всего в реестре</span><b class="big">${active.length}</b></div><div><span>Члены и активисты</span><b class="big">${party}</b></div><div><span>Новых за месяц</span><b class="big">${nw}</b></div></div>`+
-    counts.map(([s,c],i)=>`<div class="statrow"><span>${s}</span><div class="bar"><i style="width:${c/mx*100}%;background:var(--${['muted','warn','accent','ok','off'][i]||'accent'})"></i></div><span class="num r">${c}</span></div>`).join('')+
-    `<div style="margin-top:10px"><a class="link" href="#members">Открыть реестр</a></div>`;
+  const n=members.length,up=members.filter(x=>x.uploaded==='Загружен').length,ok=members.filter(x=>x.decision==='Принят').length,
+    bad=members.filter(x=>x.decision==='Не принят').length,wait=members.filter(x=>x.uploaded==='Загружен'&&x.decision==='Ждёт решения').length,notup=n-up;
+  const rows=[['Не загружены на сайт',notup,'muted'],['Загружены, ждут решения',wait,'warn'],['Приняты',ok,'ok'],['Не приняты',bad,'bad']];const mx=Math.max(1,...rows.map(r=>r[1]));
+  el.innerHTML=`<div class="minis"><div><span>Всего в списке</span><b class="big">${n}</b></div><div><span>Загружено на сайт</span><b class="big">${up}</b></div><div><span>Приняты</span><b class="big">${ok}</b></div></div>`+
+    rows.map(([l,c,col])=>`<div class="statrow"><span>${l}</span><div class="bar"><i style="width:${c/mx*100}%;background:var(--${col})"></i></div><span class="num r">${c}</span></div>`).join('')+
+    `<div style="margin-top:10px"><a class="link" href="#members">Открыть список</a></div>`;
 }
+
 document.addEventListener('click',e=>{const c=e.target.closest('[data-rm]');if(c){rMetric=c.dataset.rm;renderReport();return}
   const it=e.target.closest('[data-open]');if(it){const ev=events.find(x=>String(x.id)===it.dataset.open);if(ev){cur=new Date(+ev.date.slice(0,4),+ev.date.slice(5,7)-1,1);selDay=ev.date;openEv=ev.id;calView='grid';location.hash='#calendar'}}});
 document.addEventListener('change',e=>{const k=e.target.dataset.mgoal,g=e.target.dataset.goal;if(!k&&!g)return;const v=Math.max(0,Math.round(Number(String(e.target.value).replace(/\s/g,''))||0));
@@ -786,35 +783,39 @@ $('#bNewAdd').addEventListener('click',()=>busy($('#bNewAdd'),async()=>{const na
 
 /* ---------- MEMBERS ---------- */
 let mFilterSt='all';
+const upCls=v=>v==='Загружен'?'st-up':'st-no';
+const decCls=v=>v==='Принят'?'st-ok':v==='Не принят'?'st-bad':'st-wait';
+const MF=[['all','Все',()=>true],['notup','Не загружены',x=>x.uploaded!=='Загружен'],['wait','Ждут решения',x=>x.uploaded==='Загружен'&&x.decision==='Ждёт решения'],['ok','Приняты',x=>x.decision==='Принят'],['bad','Не приняты',x=>x.decision==='Не принят']];
 function renderMembers(){
   if(view!=='members')return;
-  if(members===null){$('#mBody').innerHTML='<tr><td colspan="8" class="state">Загружаю…</td></tr>';return}
+  if(members===null){$('#mBody').innerHTML='<tr><td colspan="4" class="state">Загружаю…</td></tr>';return}
   const q=$('#mSearch').value.trim().toLowerCase();
-  $('#mFilter').innerHTML=[['all','Все',members.length],...memberStatuses.map(s=>[s,s,members.filter(x=>x.status===s).length])].map(([k,l,c])=>`<button type="button" class="chip" data-mf="${esc(k)}" aria-pressed="${mFilterSt===k}">${esc(l)} <span class="cnt">${c}</span></button>`).join('');
-  let l=members.filter(x=>mFilterSt==='all'||x.status===mFilterSt);
-  if(q)l=l.filter(x=>[x.name,x.phone,x.email,x.address,x.curator,x.note].join(' ').toLowerCase().includes(q));
+  $('#mFilter').innerHTML=MF.map(([k,l,f])=>`<button type="button" class="chip" data-mf="${k}" aria-pressed="${mFilterSt===k}">${l} <span class="cnt">${members.filter(f).length}</span></button>`).join('');
+  let l=members.filter((MF.find(m=>m[0]===mFilterSt)||MF[0])[2]);
+  if(q)l=l.filter(x=>(x.name+' '+x.note).toLowerCase().includes(q));
   l.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-  $('#mBody').innerHTML=l.length?l.map(x=>{const si=memberStatuses.indexOf(x.status);return `<tr data-mid="${esc(x.id)}">
+  $('#mBody').innerHTML=l.length?l.map(x=>`<tr data-mid="${esc(x.id)}">
     <td class="name" data-medit>${esc(x.name)}</td>
-    <td><select class="mst ms-${si<0?0:si}" data-mst aria-label="Статус">${memberStatuses.map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></td>
-    <td class="num">${esc(x.phone)||'—'}</td><td>${esc(x.address)||'—'}</td><td class="num">${dshort(x.joined)||'—'}</td><td>${esc(x.curator)||'—'}</td>
-    <td>${x.consent?'<span class="yes">Есть</span>':'<span class="no">Нет</span>'}</td><td class="note" title="${esc(x.note)}">${esc(x.note)||''}</td></tr>`}).join('')
-    :`<tr><td colspan="8" class="state">${members.length?'Никого не нашлось. Измените поиск или фильтр.':'Реестр пуст. Нажмите «+ Добавить», чтобы внести первого человека.'}</td></tr>`;
+    <td><select class="mst ${upCls(x.uploaded)}" data-mf-k="uploaded" aria-label="Загружен на сайт партии">${UPL.map(s=>`<option ${s===x.uploaded?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td><select class="mst ${decCls(x.decision)}" data-mf-k="decision" aria-label="Решение">${DEC.map(s=>`<option ${s===x.decision?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td class="note" title="${esc(x.note)}">${esc(x.note)||''}</td></tr>`).join('')
+    :`<tr><td colspan="4" class="state">${members.length?'Никого не нашлось. Измените поиск или фильтр.':'Список пуст. Нажмите «+ Добавить», чтобы внести первого человека.'}</td></tr>`;
   $('#mCount').textContent=`Показано ${l.length} из ${members.length}. Удалять записи может только администратор.`;
 }
 $('#mSearch').addEventListener('input',renderMembers);
 document.addEventListener('click',e=>{const f=e.target.closest('[data-mf]');if(f){mFilterSt=f.dataset.mf;renderMembers()}});
-$('#mBody').addEventListener('change',e=>{if(!e.target.matches('[data-mst]'))return;const id=e.target.closest('[data-mid]').dataset.mid,x=members.find(m=>m.id===id);x.status=e.target.value;
-  e.target.className='mst ms-'+memberStatuses.indexOf(x.status);api('saveMember',{id,fields:{status:x.status}}).then(()=>{toast('Статус обновлён');renderReportMembers()}).catch(err=>{toast(err.message);loadMembers(true)})});
+$('#mBody').addEventListener('change',e=>{const k=e.target.dataset.mfK;if(!k)return;const id=e.target.closest('[data-mid]').dataset.mid,x=members.find(m=>m.id===id);x[k]=e.target.value;
+  e.target.className='mst '+(k==='uploaded'?upCls(x[k]):decCls(x[k]));
+  api('saveMember',{id,fields:{[k]:x[k]}}).then(()=>{toast('Сохранено');renderReportMembers();renderMembers()}).catch(err=>{toast(err.message);loadMembers(true)})});
 $('#mBody').addEventListener('click',e=>{if(!e.target.closest('[data-medit]'))return;openMember(members.find(m=>m.id===e.target.closest('[data-mid]').dataset.mid))});
 let memberId=null;
 function openMember(x){memberId=x?x.id:null;$('#dMemberT').textContent=x?'Карточка':'Новый человек';
-  $('#pStatus').innerHTML=memberStatuses.map(s=>`<option>${s}</option>`).join('');
-  const v=(id,val)=>{$(id).value=val??''};v('#pName',x?.name);v('#pStatus',x?x.status:memberStatuses[0]);v('#pJoined',x?.joined);v('#pPhone',x?.phone);v('#pEmail',x?.email);v('#pAddress',x?.address);v('#pCurator',x?.curator);v('#pNote',x?.note);
-  $('#pConsent').checked=!!(x&&x.consent);$('#pDel').hidden=!(x&&isAdmin());$('#dMember').showModal();setTimeout(()=>$('#pName').focus(),0)}
+  $('#pUploaded').innerHTML=UPL.map(s=>`<option>${s}</option>`).join('');$('#pDecision').innerHTML=DEC.map(s=>`<option>${s}</option>`).join('');
+  $('#pName').value=x?.name??'';$('#pUploaded').value=x?x.uploaded:UPL[0];$('#pDecision').value=x?x.decision:DEC[0];$('#pNote').value=x?.note??'';
+  $('#pDel').hidden=!(x&&isAdmin());$('#dMember').showModal();setTimeout(()=>$('#pName').focus(),0)}
 $('#mAdd').addEventListener('click',()=>openMember(null));
 $('#fMember').addEventListener('submit',e=>{e.preventDefault();
-  const fields={name:$('#pName').value.trim(),status:$('#pStatus').value,joined:$('#pJoined').value,phone:$('#pPhone').value.trim(),email:$('#pEmail').value.trim(),address:$('#pAddress').value.trim(),curator:$('#pCurator').value.trim(),note:$('#pNote').value,consent:$('#pConsent').checked};
+  const fields={name:$('#pName').value.trim(),uploaded:$('#pUploaded').value,decision:$('#pDecision').value,note:$('#pNote').value};
   busy(e.submitter,async()=>{try{await api('saveMember',{id:memberId,fields});$('#dMember').close();toast(memberId?'Сохранено':'Добавлено');await loadMembers(true)}catch(err){toast(err.message)}})});
 $('#pDel').addEventListener('click',()=>armDelete($('#pDel'),()=>busy($('#pDel'),async()=>{try{await api('deleteMember',{id:memberId});$('#dMember').close();toast('Удалено');await loadMembers(true)}catch(err){toast(err.message)}})));
 
